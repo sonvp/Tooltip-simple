@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="Tooltip">
+        <attr name="android:text"/>
+        <attr name="android:textSize"/>
+        <attr name="textGravity" format="integer"/>
+        <attr name="android:textColor"/>
+        <attr name="android:textStyle"/>
+        <attr name="android:fontFamily"/>
+        <attr name="android:typeface"/>
+        <attr name="tooltipGravity">
+            <enum name="left" value="3" />
+            <enum name="right" value="5"/>
+            <enum name="top" value="48"/>
+            <enum name="bottom" value="80"/>
+        </attr>
+        <attr name="arrowGravity">
+            <enum name="top" value="48" />
+            <enum name="center" value="17"/>
+            <enum name="bottom" value="80"/>
+        </attr>
+        <attr name="tooltipMargin" format="dimension"/>
+        <attr name="android:lines"/>
+        <attr name="backgroundColor" format="color"/>
+        <attr name="arrowHeight" format="dimension"/>
+        <attr name="arrowWidth" format="dimension"/>
+        <attr name="arrowDrawable" format="reference"/>
+        <attr name="leftPadding" format="dimension"/>
+        <attr name="rightPadding" format="dimension"/>
+        <attr name="topPadding" format="dimension"/>
+        <attr name="bottomPadding" format="dimension"/>
+        <attr name="radius" format="dimension"/>
+        <attr name="textResourceId" format="reference"/>
+    </declare-styleable>
+</resources>
