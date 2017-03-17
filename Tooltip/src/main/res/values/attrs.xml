@@ -31,5 +31,6 @@
         <attr name="bottomPadding" format="dimension"/>
         <attr name="radius" format="dimension"/>
         <attr name="textResourceId" format="reference"/>
+        <attr name="dismissOutsideTouch" format="boolean"/>
     </declare-styleable>
 </resources>

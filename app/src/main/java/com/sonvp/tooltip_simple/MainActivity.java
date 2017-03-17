@@ -18,9 +18,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         super.setContentView(R.layout.activity_main);
         initView();
+
     }
 
     private void initView() {
+
+        findViewById(R.id.bt34).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                Toast.makeText(MainActivity.this, "what", Toast.LENGTH_SHORT).show();
+
+                showToolTipView(v, Gravity.LEFT, "Tool 11111 111111 111111 111111 111111 111111 111111 111111 111111 111111",
+                        ContextCompat.getColor(MainActivity.this, R.color.maroon), false);
+            }
+        });
 
         findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,10 +61,9 @@ public class MainActivity extends AppCompatActivity {
             anchorView.setTag(null);
             return;
         }
-
         Tooltip tooltip = createToolTipView(text, anchorView, gravity, theme);
         if (delay > 0L) {
-            tooltip.showDelayed(delay);
+            tooltip.showDelayed(100);
         } else {
             tooltip.show();
         }
@@ -82,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
                     .withTextColor(Color.WHITE)
                     .withArrowGravity(Gravity.TOP)
                     .withTextSize(textSize)
+                    .withToolTipMargin(padding)
                     .withPadding(padding, padding, padding, padding)
                     .withCornerRadius(radius)
                     .build();

@@ -63,7 +63,7 @@ final class ArrowDrawable extends ColorDrawable {
         mPath = new Path();
 
         switch (mGravity) {
-            case Gravity.START:
+            case Gravity.LEFT:
                 mPath.moveTo(bounds.width(), bounds.height());
                 mPath.lineTo(0, bounds.height() / 2);
                 mPath.lineTo(bounds.width(), 0);
@@ -75,7 +75,7 @@ final class ArrowDrawable extends ColorDrawable {
                 mPath.lineTo(bounds.width(), bounds.height());
                 mPath.lineTo(0, bounds.height());
                 break;
-            case Gravity.END:
+            case Gravity.RIGHT:
                 mPath.moveTo(0, 0);
                 mPath.lineTo(bounds.width(), bounds.height() / 2);
                 mPath.lineTo(0, bounds.height());
@@ -133,12 +133,12 @@ final class ArrowDrawable extends ColorDrawable {
 
     public static int gravityToArrowDirection(int gravity) {
         switch (gravity) {
-            case Gravity.START:
-                return Gravity.END;
+            case Gravity.LEFT:
+                return Gravity.RIGHT;
             case Gravity.TOP:
                 return Gravity.BOTTOM;
-            case Gravity.END:
-                return Gravity.START;
+            case Gravity.RIGHT:
+                return Gravity.LEFT;
             case Gravity.BOTTOM:
                 return Gravity.TOP;
             default:

@@ -22,14 +22,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -40,6 +38,7 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -57,9 +56,43 @@ import static com.sonvp.tooltip.R.styleable.Tooltip_android_text;
 import static com.sonvp.tooltip.R.styleable.Tooltip_android_textSize;
 import static com.sonvp.tooltip.R.styleable.Tooltip_tooltipMargin;
 
-public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClickListener {
+public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClickListener,
+        View.OnTouchListener, PopupWindow.OnDismissListener {
+
+    private static final int SIZE_TOUCH = 5;
 
     private final PopupWindow popupWindow;
+    private final Rect rectAnchorView;
+    private View overlay = null;
+    private ViewGroup rootView = null;
+
+    @Override
+    public boolean onTouch(View view, MotionEvent event) {
+
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            final int x = (int) event.getX();
+            final int y = (int) event.getY();
+
+            Rect rect = new Rect(x, y, x + SIZE_TOUCH, y + SIZE_TOUCH);
+            if (!rectAnchorView.contains(rect) || !rectAnchorView.intersect(rect)) {
+                if (listener != null) {
+                    listener.onToolTipClicked(this);
+                }
+                remove();
+            }
+        }
+
+
+        return false;
+    }
+
+
+    @Override
+    public void onDismiss() {
+        if (rootView != null && overlay != null) {
+            rootView.removeView(overlay);
+        }
+    }
 
     public interface OnToolTipClickedListener {
         void onToolTipClicked(Tooltip tooltip);
@@ -68,10 +101,10 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
     private static final int GRAVITY_START = 0x00800003;
     private static final int GRAVITY_END = 0x00800005;
 
-    private static final long ANIMATION_DURATION = 300L;
+    private static final long ANIMATION_DURATION = 00L;
 
     private final View anchorView;
-    private final int gravity;
+    private int gravity;
 
     private final LinearLayout container;
     private final TextView text;
@@ -85,16 +118,27 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
     @Nullable
     private OnToolTipClickedListener listener;
 
-    private Tooltip(Context context, View anchorView, Builder builder) {
+    private Tooltip(View anchorView, Builder builder) {
         this.builder = builder;
         this.anchorView = anchorView;
         this.gravity = builder.tooltipGravity;
 
+        if (builder.dismissOutsideTouch) {
+
+            rootView = (ViewGroup) anchorView.getRootView();
+            overlay = new View(builder.context);
+            overlay.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
+//        overlay.setBackgroundColor(builder.context.getResources().getColor(android.R.color.holo_green_light));
+            overlay.setOnTouchListener(this);
+            rootView.addView(overlay);
+        }
+
         // TODO container should NOT capture all events
-        container = new LinearLayout(context);
+        container = new LinearLayout(builder.context);
         container.setOnClickListener(this);
 
-        text = new TextView(context);
+        text = new TextView(builder.context);
         text.setPadding((int) builder.leftPadding, (int) builder.topPadding,
                 (int) builder.rightPadding, (int) builder.bottomPadding);
         text.setGravity(builder.textGravity);
@@ -109,7 +153,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
 
         CharSequence txt = builder.text;
         if (TextUtils.isEmpty(txt)) {
-            txt = context.getString(builder.textResourceId);
+            txt = builder.context.getString(builder.textResourceId);
         }
         text.setText(txt);
 
@@ -127,7 +171,14 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
             text.setBackgroundColor(backgroundColor);
         }
 
-        arrow = new ImageView(context);
+
+        rectAnchorView = getRectView(anchorView);
+        changeGravityToolTip();
+        if (builder.arrowDrawable == null) {
+            builder.arrowDrawable =  new ArrowDrawable(backgroundColor, gravity);;
+        }
+
+        arrow = new ImageView(builder.context);
         // TODO supports Gravity.NO_GRAVITY
         switch (gravity) {
             case Gravity.LEFT:
@@ -155,10 +206,26 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
                 container.addView(text, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
                 break;
         }
+
         popupWindow = new PopupWindow(container,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
+        popupWindow.setOnDismissListener(this);
         popupWindow.setClippingEnabled(false);
+//        popupWindow.setBackgroundDrawable(builder.context.getResources().getDrawable(android.R.color.holo_blue_bright));
+
+    }
+
+    private Rect getRectView(View view) {
+        Rect rect = new Rect();
+        int[] screenLoc = new int[2];
+        view.getLocationOnScreen(screenLoc);
+        rect.left += screenLoc[0];
+        rect.right += screenLoc[0] + view.getWidth();
+        rect.top += screenLoc[1];
+        rect.bottom += screenLoc[1] + view.getHeight();
+
+        return rect;
     }
 
     /**
@@ -174,7 +241,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
     @UiThread
     public void show() {
         container.getViewTreeObserver().addOnPreDrawListener(this);
-        popupWindow.showAsDropDown(anchorView);
+        popupWindow.showAsDropDown(container);
     }
 
     /**
@@ -191,7 +258,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
      * Shows the tool tip with the specified delay.
      */
     public void showDelayed(long milliSeconds) {
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+        new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 show();
@@ -240,6 +307,15 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         }
     }
 
+    private int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = builder.context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = builder.context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
     @Override
     public boolean onPreDraw() {
         container.getViewTreeObserver().removeOnPreDrawListener(this);
@@ -252,12 +328,10 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int displayWidth = displayMetrics.widthPixels;
         int displayHeight = displayMetrics.heightPixels;
+        int displayTop = getStatusBarHeight();
 
-        Rect rect = new Rect();
-        Point offset = new Point();
-        anchorView.getGlobalVisibleRect(rect, offset);
-        int anchorTop = rect.top;
-        int anchorLeft = rect.left;
+        int anchorTop = rectAnchorView.top;
+        int anchorLeft = rectAnchorView.left;
         int anchorWidth = anchorView.getWidth();
         int anchorHeight = anchorView.getHeight();
 
@@ -266,6 +340,10 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         int textHeight = text.getHeight();
         int arrowWidth = arrow.getWidth();
         int arrowHeight = arrow.getHeight();
+
+
+        int widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(displayWidth, View.MeasureSpec.AT_MOST);
+        int heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
 
         if (gravity == Gravity.TOP || gravity == Gravity.BOTTOM) {
             int width = Math.max(textWidth, arrowWidth);
@@ -290,7 +368,6 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
             ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) arrow.getLayoutParams();
             layoutParams.leftMargin = anchorHorizontalCenter - leftPadding - arrowWidth / 2;
             arrow.setLayoutParams(layoutParams);
-
             popupWindow.update(leftPadding, topPadding, container.getWidth(), container.getHeight());
 
             pivotX = width / 2;
@@ -316,7 +393,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
 
             text.setMaxWidth(displayWidth - rightPadding - leftPadding - arrowWidth);
 
-            text.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+            text.measure(widthMeasureSpec, heightMeasureSpec);
             textHeight = text.getMeasuredHeight(); // height multi line
 
             int height = Math.max(textHeight, arrowHeight);
@@ -328,13 +405,16 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
 
             if (builder.arrowGravity == Gravity.TOP) {
                 top = anchorTop;
+                bottom = anchorTop + height;
             } else if (builder.arrowGravity == Gravity.BOTTOM) {
                 top = anchorTop + anchorHeight - height;
             }
 
-            topPadding = Math.max(0, bottom > displayHeight ? displayHeight - height - (int) builder.toolTipMargin : top);
 
-            container.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+            topPadding = Math.max(0, bottom > displayHeight ? displayHeight - height - (int) builder.toolTipMargin : top);
+            topPadding = Math.max(0, topPadding < displayTop ? displayTop + (int) builder.toolTipMargin: topPadding);
+
+            container.measure(widthMeasureSpec, heightMeasureSpec);
             int popupWidth = container.getMeasuredWidth();
             int popupHeight = container.getMeasuredHeight();
             popupWindow.update(leftPadding, topPadding, popupWidth, popupHeight);
@@ -363,6 +443,61 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         }
 
         return false;
+    }
+
+    /**
+     * change gravity tooltip if anchorView intersect display screen
+     */
+    private void changeGravityToolTip() {
+
+        Context context = container.getContext();
+        if (!(context instanceof Activity)) {
+            return;
+        }
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int displayHeight = displayMetrics.heightPixels;
+        int displayWidth = displayMetrics.widthPixels;
+        int displayTop = getStatusBarHeight();
+
+        int anchorTop = rectAnchorView.top;
+        int anchorHeight = anchorView.getHeight();
+
+        int widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(displayWidth, View.MeasureSpec.AT_MOST);
+        int heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        text.measure(widthMeasureSpec, heightMeasureSpec);
+
+        int textHeight = text.getMeasuredHeight(); // height multi line
+        int heightToolTip = textHeight +
+                (int) builder.arrowHeight +
+                (int) builder.topPadding +
+                (int) builder.bottomPadding +
+                (int)builder.toolTipMargin;
+
+        switch (gravity) {
+            case Gravity.LEFT:
+            case Gravity.RIGHT:
+
+                int anchorVerticalCenter = anchorTop + anchorHeight / 2;
+                int bottomArrow = anchorVerticalCenter + (int) builder.arrowHeight / 2;
+                if (bottomArrow + (int) builder.radius / 2 + (int) builder.toolTipMargin
+                        > displayHeight) {
+                    gravity = Gravity.TOP;
+                }
+                break;
+            case Gravity.TOP:
+                if (anchorTop - displayTop < heightToolTip) {
+                    gravity = Gravity.BOTTOM;
+                }
+                break;
+
+            case Gravity.BOTTOM:
+                int anchorBottom = displayHeight - (anchorTop + anchorHeight);
+                if (anchorBottom < heightToolTip) {
+                    gravity = Gravity.TOP;
+                }
+                break;
+        }
     }
 
     @Override
@@ -404,6 +539,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         private float arrowHeight = DEFAULT_ARROW_SIZE;
         private float arrowWidth = DEFAULT_ARROW_SIZE;
         private float toolTipMargin = 0.0F;
+        private boolean dismissOutsideTouch = true;
 
         private Drawable arrowDrawable;
 
@@ -442,6 +578,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
             arrowWidth = a.getDimension(R.styleable.Tooltip_arrowWidth, DEFAULT_ARROW_SIZE);
             arrowDrawable = a.getDrawable(R.styleable.Tooltip_arrowDrawable);
             textResourceId = a.getResourceId(R.styleable.Tooltip_textResourceId, -1);
+            dismissOutsideTouch = a.getBoolean(R.styleable.Tooltip_dismissOutsideTouch,true);
 
             typefaceStyle = a.getInteger(R.styleable.Tooltip_android_textStyle, -1);
             final String fontFamily = a.getString(R.styleable.Tooltip_android_fontFamily);
@@ -588,6 +725,14 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         }
 
         /**
+         * Sets the tooltip dismiss when touch outside. The default value is true.
+         */
+        public Builder withDismissOutsideTouch(boolean dismissOutsideTouch) {
+            this.dismissOutsideTouch = dismissOutsideTouch;
+            return this;
+        }
+
+        /**
          * Sets the tool tip gravity. By default, it will be anchored to bottom of the anchor view.
          * <p/>
          * Only the following are supported: Gravity.TOP, Gravity.BOTTOM, Gravity.LEFT, Gravity.RIGHT,
@@ -639,27 +784,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
                 throw new IllegalArgumentException("Unsupported arrow gravity - " + arrowGravity);
             }
 
-            if (arrowDrawable == null) {
-                arrowDrawable = getArrowDrawable(tooltipGravity);
-            }
-
-            return new Tooltip(context, anchorView, this);
-        }
-
-
-        private Drawable getArrowDrawable(int gravity) {
-            switch (gravity) {
-                case Gravity.LEFT:
-                    return new ArrowDrawable(backgroundColor, Gravity.START);
-                case Gravity.RIGHT:
-                    return new ArrowDrawable(backgroundColor, Gravity.END);
-                case Gravity.TOP:
-                    return new ArrowDrawable(backgroundColor, Gravity.TOP);
-                case Gravity.BOTTOM:
-                    return new ArrowDrawable(backgroundColor, Gravity.BOTTOM);
-                default:
-                    throw new IllegalArgumentException("Unsupported arrow gravity - " + arrowGravity);
-            }
+            return new Tooltip(anchorView, this);
         }
 
         /**
