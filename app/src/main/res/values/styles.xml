@@ -1,7 +1,7 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
@@ -22,7 +22,7 @@
         <item name="android:text">tes thoi ma 123123123 2134123 123123 123</item>
         <item name="android:textSize">16sp</item>
         <!--<item name="tooltipMargin">5dp</item>-->
-        <item name="tooltipGravity">top</item>
+        <item name="tooltipGravity">right</item>
         <item name="arrowGravity">top</item>
         <item name="android:textColor">@color/green</item>
         <item name="radius">10dp</item>

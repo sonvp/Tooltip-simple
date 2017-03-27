@@ -175,7 +175,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         rectAnchorView = getRectView(anchorView);
         changeGravityToolTip();
         if (builder.arrowDrawable == null) {
-            builder.arrowDrawable =  new ArrowDrawable(backgroundColor, gravity);;
+            builder.arrowDrawable = new ArrowDrawable(backgroundColor, gravity);
         }
 
         arrow = new ImageView(builder.context);
@@ -412,7 +412,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
 
 
             topPadding = Math.max(0, bottom > displayHeight ? displayHeight - height - (int) builder.toolTipMargin : top);
-            topPadding = Math.max(0, topPadding < displayTop ? displayTop + (int) builder.toolTipMargin: topPadding);
+            topPadding = Math.max(0, topPadding < displayTop ? displayTop + (int) builder.toolTipMargin : topPadding);
 
             container.measure(widthMeasureSpec, heightMeasureSpec);
             int popupWidth = container.getMeasuredWidth();
@@ -472,7 +472,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
                 (int) builder.arrowHeight +
                 (int) builder.topPadding +
                 (int) builder.bottomPadding +
-                (int)builder.toolTipMargin;
+                (int) builder.toolTipMargin;
 
         switch (gravity) {
             case Gravity.LEFT:
@@ -480,9 +480,13 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
 
                 int anchorVerticalCenter = anchorTop + anchorHeight / 2;
                 int bottomArrow = anchorVerticalCenter + (int) builder.arrowHeight / 2;
-                if (bottomArrow + (int) builder.radius / 2 + (int) builder.toolTipMargin
+                int topArrow = anchorVerticalCenter - (int) builder.arrowHeight / 2;
+                if (bottomArrow +  builder.radius +  builder.toolTipMargin
                         > displayHeight) {
                     gravity = Gravity.TOP;
+                } else if (topArrow < getStatusBarHeight() +  builder.radius
+                        + builder.toolTipMargin) {
+                    gravity = Gravity.BOTTOM;
                 }
                 break;
             case Gravity.TOP:
@@ -578,7 +582,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
             arrowWidth = a.getDimension(R.styleable.Tooltip_arrowWidth, DEFAULT_ARROW_SIZE);
             arrowDrawable = a.getDrawable(R.styleable.Tooltip_arrowDrawable);
             textResourceId = a.getResourceId(R.styleable.Tooltip_textResourceId, -1);
-            dismissOutsideTouch = a.getBoolean(R.styleable.Tooltip_dismissOutsideTouch,true);
+            dismissOutsideTouch = a.getBoolean(R.styleable.Tooltip_dismissOutsideTouch, true);
 
             typefaceStyle = a.getInteger(R.styleable.Tooltip_android_textStyle, -1);
             final String fontFamily = a.getString(R.styleable.Tooltip_android_fontFamily);
