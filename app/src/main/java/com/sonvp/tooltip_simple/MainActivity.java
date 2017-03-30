@@ -1,12 +1,15 @@
 package com.sonvp.tooltip_simple;
 
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import com.sonvp.tooltip.Tooltip;
 
@@ -25,10 +28,26 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.bt34).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                Toast.makeText(MainActivity.this, "what", Toast.LENGTH_SHORT).show();
-
                 showToolTipView(v, Gravity.LEFT, "Tool 11111 111111 111111 111111 111111 111111 111111 111111 111111 111111",
                         ContextCompat.getColor(MainActivity.this, R.color.maroon), false);
+            }
+        });
+
+//        findViewById(R.id.bt123).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Toast.makeText(MainActivity.this, "Click", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+        findViewById(R.id.bt123).setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    Log.d("bt123", "onTouch" );
+                    Toast.makeText(MainActivity.this, "Click", Toast.LENGTH_SHORT).show();
+                }
+
+                return false;
             }
         });
 
@@ -40,11 +59,23 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.button1).setOnClickListener(new View.OnClickListener() {
+//        findViewById(R.id.button1).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                showToolTipView(v, Gravity.RIGHT, "Tool 11111 111111 111111 111111 111111 111111 111111 111111 111111 5555",
+//                        ContextCompat.getColor(MainActivity.this, R.color.maroon), true);
+//            }
+//        });
+
+
+        findViewById(R.id.button1).setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void onClick(View v) {
-                showToolTipView(v, Gravity.LEFT, "Tool 11111 111111 111111 111111 111111 111111 111111 111111 111111 5555",
-                        ContextCompat.getColor(MainActivity.this, R.color.maroon), true);
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    showToolTipView(v, Gravity.RIGHT, "Tool 11111 111111 111111 111111 111111 111111 111111 111111 111111 5555",
+                            ContextCompat.getColor(MainActivity.this, R.color.maroon), true);
+                }
+                return false;
             }
         });
     }
@@ -84,19 +115,27 @@ public class MainActivity extends AppCompatActivity {
         int radius = resources.getDimensionPixelSize(R.dimen.radius);
 
         if (theme) {
+
+            LayoutInflater inflater = getLayoutInflater();
+            View toolTipView = inflater.inflate(R.layout.tooltip_custom_view, null);
             return new Tooltip.Builder(this)
-                    .withAnchor(anchorView)
+//                    .withAnchor(anchorView)
+//                    .withTooltipGravity(gravity)
+//                    .withText(text)
+//                    .withTextColor(Color.WHITE)
+//                    .withArrowGravity(Gravity.TOP)
+//                    .withTextSize(textSize)
+//                    .withToolTipMargin(padding)
+//                    .withPadding(padding, padding, padding, padding)
+//                    .withCornerRadius(radius)
                     .withTooltipGravity(gravity)
-                    .withText(text)
-                    .withTextColor(Color.WHITE)
-                    .withArrowGravity(Gravity.TOP)
-                    .withTextSize(textSize)
-                    .withToolTipMargin(padding)
-                    .withPadding(padding, padding, padding, padding)
+                    .withAnchor(anchorView)
+                    .withViewTooltip(toolTipView)
+                    .withBackgroundColorRes(R.color.colorAccent)
                     .withCornerRadius(radius)
                     .build();
         } else {
-            return new Tooltip.Builder(this, anchorView,R.style.Tooltip)
+            return new Tooltip.Builder(this, anchorView, R.style.Tooltip)
                     .build();
         }
     }
