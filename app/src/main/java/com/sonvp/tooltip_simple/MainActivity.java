@@ -33,12 +33,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        findViewById(R.id.bt123).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Toast.makeText(MainActivity.this, "Click", Toast.LENGTH_SHORT).show();
-//            }
-//        });
         findViewById(R.id.bt123).setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -59,25 +53,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        findViewById(R.id.button1).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                showToolTipView(v, Gravity.RIGHT, "Tool 11111 111111 111111 111111 111111 111111 111111 111111 111111 5555",
-//                        ContextCompat.getColor(MainActivity.this, R.color.maroon), true);
-//            }
-//        });
-
-
-        findViewById(R.id.button1).setOnTouchListener(new View.OnTouchListener() {
+        findViewById(R.id.button1).setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    showToolTipView(v, Gravity.RIGHT, "Tool 11111 111111 111111 111111 111111 111111 111111 111111 111111 5555",
-                            ContextCompat.getColor(MainActivity.this, R.color.maroon), true);
-                }
-                return false;
+            public void onClick(View v) {
+                showToolTipView(v, Gravity.RIGHT, "Tool 11111 111111 111111 111111 111111 111111 111111 111111 111111 5555",
+                        ContextCompat.getColor(MainActivity.this, R.color.maroon), true);
             }
         });
+
     }
 
 
@@ -99,9 +82,15 @@ public class MainActivity extends AppCompatActivity {
         }
         anchorView.setTag(tooltip);
 
-        tooltip.setOnToolTipClickedListener(new Tooltip.OnToolTipClickedListener() {
+        tooltip.setOnToolTipClickedListener(new Tooltip.OnToolTipListener() {
             @Override
             public void onToolTipClicked(Tooltip tooltip) {
+                ((Tooltip) anchorView.getTag()).remove();
+                anchorView.setTag(null);
+            }
+
+            @Override
+            public void onClickedOutsideTooltip(Tooltip tooltip) {
                 anchorView.setTag(null);
             }
         });

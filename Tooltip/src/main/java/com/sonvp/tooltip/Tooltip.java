@@ -38,7 +38,6 @@ import android.support.annotation.UiThread;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -54,7 +53,6 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-import static android.R.attr.width;
 import static com.sonvp.tooltip.R.styleable.Tooltip_android_lines;
 import static com.sonvp.tooltip.R.styleable.Tooltip_android_text;
 import static com.sonvp.tooltip.R.styleable.Tooltip_android_textSize;
@@ -74,19 +72,25 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
     public boolean onTouch(View view, MotionEvent event) {
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
+
+            if (listener != null) {
+                listener.onClickedOutsideTooltip(this);
+            }
+            remove();
+
             final int x = (int) event.getX();
             final int y = (int) event.getY();
-
             Rect rect = new Rect(x, y, x + SIZE_TOUCH, y + SIZE_TOUCH);
-            if (!rectAnchorView.contains(rect) || !rectAnchorView.intersect(rect)) {
-                if (listener != null) {
-                    listener.onToolTipClicked(this);
-                }
-                remove();
+            if (rectAnchorView.contains(rect) || rectAnchorView.intersect(rect)) {
+                builder.anchorView.setClickable(false);
+                builder.anchorView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        builder.anchorView.setClickable(true);
+                    }
+                }, 50);
             }
         }
-
-
         return false;
     }
 
@@ -98,8 +102,9 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         }
     }
 
-    public interface OnToolTipClickedListener {
+    public interface OnToolTipListener {
         void onToolTipClicked(Tooltip tooltip);
+        void onClickedOutsideTooltip(Tooltip tooltip);
     }
 
     private static final int GRAVITY_START = 0x00800003;
@@ -120,11 +125,11 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
     private float pivotY;
 
     @Nullable
-    private OnToolTipClickedListener listener;
+    private OnToolTipListener listener;
 
-    private Tooltip(View anchorView, Builder builder) {
+    private Tooltip(Builder builder) {
         this.builder = builder;
-        this.anchorView = anchorView;
+        this.anchorView = builder.anchorView;
         this.gravity = builder.tooltipGravity;
 
         if (builder.dismissOutsideTouch) {
@@ -186,6 +191,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         popupWindow.setOnDismissListener(this);
         popupWindow.setClippingEnabled(false);
+        popupWindow.setAnimationStyle(android.R.style.Animation);
 //        popupWindow.setBackgroundDrawable(builder.context.getResources().getDrawable(android.R.color.holo_blue_bright));
 
     }
@@ -250,7 +256,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
     /**
      * Sets a listener that will be called when the tool tip view is clicked.
      */
-    public void setOnToolTipClickedListener(OnToolTipClickedListener listener) {
+    public void setOnToolTipClickedListener(OnToolTipListener listener) {
         this.listener = listener;
     }
 
@@ -261,6 +267,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
     public void show() {
         container.getViewTreeObserver().addOnPreDrawListener(this);
         popupWindow.showAsDropDown(container);
+        builder.anchorView.setTag(this);
     }
 
     /**
@@ -564,8 +571,6 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
         if (listener != null) {
             listener.onToolTipClicked(this);
         }
-
-        remove();
     }
 
     /**
@@ -861,7 +866,7 @@ public class Tooltip implements ViewTreeObserver.OnPreDrawListener, View.OnClick
                 throw new IllegalArgumentException("Unsupported arrow gravity - " + arrowGravity);
             }
 
-            return new Tooltip(anchorView, this);
+            return new Tooltip(this);
         }
 
         /**
